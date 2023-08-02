@@ -92,14 +92,7 @@ url = "https://openapi.naver.com/v1/search/blog?query=" + encText +"&display="+d
             "bloggerlink": "https://ystazo.tistory.com/",
             "postdate": "20230220"
         },
-        {
-            "title": "IT 기술 따라잡기 :: <b>Openai</b> cookbook - Embeddings... ",
-            "link": "https://coronasdk.tistory.com/1261",
-            "description": "이번에는 <b>Openai</b> cookbook 을 통해 얻은 정보를 가지고 embedding에 대한 예제 소스를 만들어 보도록 하겠습니다. <b>openai</b> cookbook은 <b>openai</b>에서 제공하는 예제들이 있는 페이지 입니다.... ",
-            "bloggername": "IT 기술 따라잡기 :: IT 기술 따라잡기",
-            "bloggerlink": "https://coronasdk.tistory.com/",
-            "postdate": "20230212"
-        }
+        ...
 """
 search_result = json.loads(get_search_result(client_id, client_secret, url))
 
