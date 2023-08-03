@@ -1,25 +1,23 @@
+import http
 import json
+import time
 import urllib.request
+import requests
 from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import re
+from urllib.parse import urlencode, urlparse
+from enum import Enum
 
-import time
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-import requests
-from bs4 import BeautifulSoup as bs
-from fake_useragent import UserAgent
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-
+class SearchSortType(Enum):
+    SIM="sim"
+    DATE="date"
 
 def get_search_result(client_id, client_secret, url):
+    print("[get_search_result] url:", url)
     request = urllib.request.Request(url)
     request.add_header("X-Naver-Client-Id",client_id)
     request.add_header("X-Naver-Client-Secret",client_secret)
@@ -28,7 +26,6 @@ def get_search_result(client_id, client_secret, url):
 
     if(rescode==200):
         response_body = response.read()
-    #print(response_body.decode('utf-8'))
     else:
         print("Error Code:" + rescode)
 
@@ -57,23 +54,27 @@ def get_contents_from_url(url):
     try:
         a = driver.find_element(By.CSS_SELECTOR,'div.se-main-container').text
         contents = a.replace('\n', " ")
+    except NoSuchElementException:
+        print("요소를 찾을 수 없습니다. urls: ", url)
     finally:
         driver.quit()
-    
+
     return contents
  
-
-
-# Naver Open API application ID, Secret
+ 
+ # Naver Open API application ID, Secret
 client_id = "D7LmDEYrMic2YRpskwt1" # 발급받은 id 입력
 client_secret = "th6PYwzWnU" # 발급받은 secret 입력 
 
 # 정보입력
 quote = input("검색어 입력: ") #검색어 입력받기
-encText = urllib.parse.quote(quote)
 display_num = input("검색 출력결과 갯수를 적어주세요.(최대100, 숫자만 입력): ") #출력할 갯수 입력받기
-url = "https://openapi.naver.com/v1/search/blog?query=" + encText +"&display="+display_num# json 결과
-# url = "https://openapi.naver.com/v1/search/blog.xml?query=" + encText # xml 결과
+sort_type = SearchSortType.SIM if input("검색 정렬방법을 선택해 주세요.(1. 정확도순, 2. 최신순): ") == "1" else SearchSortType.DATE
+
+query_string = urlencode({"query": quote, 
+                          "display": display_num,
+                          "sort": sort_type.value})
+url = "https://openapi.naver.com/v1/search/blog?" + query_string
 
 # 검색결과 받아오기
 """
@@ -97,17 +98,44 @@ url = "https://openapi.naver.com/v1/search/blog?query=" + encText +"&display="+d
 search_result = json.loads(get_search_result(client_id, client_secret, url))
 
 
+system = """
+    무언가를 요약해달라는 요청이 올때 다음과 같은 내용을 아래의 형식에 맞게 요약해서 전달한다. 
+    형식정보는 다음과 같다. 
+     - 장소의 이름 
+     - 장소의 컨셉
+     - 장소의 주소
+     - 장소의 실내외 정보
+     - 운영시간
+     - 장소의 공연정보
+     - 휴무일 정보
+     - 장소의 연락처
+     - 간단한 장소 설명
+     - 평균 가격대
+     - 이용시간
+     - 이용 대상 연령
+     - 주차장 유무
+     - 주차 난이도
+     - 주차장이 없는경우 가까운 주차장 정보
+     - 장소 예약 난이도
+     - 유아 편의 시절정보
+     - 장소 할인정보
+     - 해시태그
+    """
+
+conn  = http.client.HTTPConnection("localhost:8080")
+
 # data의 items를 순환하며 출력하기
 for item in search_result['items']:
     print('--------------------------------------')
-    print(get_contents_from_url(item['link']))
+    print("블로그 링크주소 -> {}".format(item['link']))
+    blog_contents = get_contents_from_url(item['link'])
+    user_message='아래 큰 따옴표 3개로 구분된 블로그 기사의 내용을 요약해줘 """{}"""'.format(blog_contents)
+    print(blog_contents)
+    print('-------------RESPONSE-----------------')
+
+    request_body = json.dumps({"system": system, "user": user_message})
+    conn.request("POST", "/open-ai/question", request_body, {"Content-Type": "application/json"})
+    response = json.loads(conn.getresponse().read().decode("utf-8"))
+    print(response["data"]["answerList"][0])
     print('--------------------------------------')
-
-
-
-
-
-
-
-
 
