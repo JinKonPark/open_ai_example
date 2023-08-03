@@ -17,7 +17,6 @@ class SearchSortType(Enum):
     DATE="date"
 
 def get_search_result(client_id, client_secret, url):
-    print("[get_search_result] url:", url)
     request = urllib.request.Request(url)
     request.add_header("X-Naver-Client-Id",client_id)
     request.add_header("X-Naver-Client-Secret",client_secret)
@@ -98,6 +97,7 @@ url = "https://openapi.naver.com/v1/search/blog?" + query_string
 search_result = json.loads(get_search_result(client_id, client_secret, url))
 
 
+#OpenAI의 system role의 persona 설정
 system = """
     무언가를 요약해달라는 요청이 올때 다음과 같은 내용을 아래의 형식에 맞게 요약해서 전달한다. 
     형식정보는 다음과 같다. 
@@ -115,12 +115,13 @@ system = """
      - 이용 대상 연령
      - 주차장 유무
      - 주차 난이도
-     - 주차장이 없는경우 가까운 주차장 정보
+     - 주변 주차장 정보
      - 장소 예약 난이도
      - 유아 편의 시절정보
      - 장소 할인정보
      - 해시태그
-    """
+    형식에 맞는 정보를 블로그에서 찾을 수 없는 경우 인터넷에서 확인후 직접 입력한다.
+    """  
 
 conn  = http.client.HTTPConnection("localhost:8080")
 
