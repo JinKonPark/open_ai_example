@@ -131,12 +131,12 @@ conn  = http.client.HTTPConnection("localhost:8080")
 
 # data의 items를 순환하며 출력하기
 for item in search_result['items']:
-    print('--------------------------------------')
+    print('------------------------------ 블로그 스크래핑 정보 ------------------------------')
     print("블로그 링크주소 -> {}".format(item['link']))
     blog_contents = get_contents_from_url(item['link'])
     user_message='아래 큰 따옴표 3개로 구분된 블로그 기사의 내용을 요약해줘 """{}"""'.format(blog_contents)
     print(blog_contents)
-    print('-------------RESPONSE-----------------')
+    print('------------------------------ OPEN AI RESPONSE ------------------------------')
 
     query_param = {"temp": temp, "top-p": top_p, "max-tokens": max_token, "n": 1}
     query_string = urlencode(query_param)
@@ -145,5 +145,5 @@ for item in search_result['items']:
     conn.request("POST", url, request_body, {"Content-Type": "application/json"})
     response = json.loads(conn.getresponse().read().decode("utf-8"))
     print(response["data"]["answerList"][0])
-    print('--------------------------------------')
+    print('------------------------------------------------------------')
 
