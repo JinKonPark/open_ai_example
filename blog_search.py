@@ -46,7 +46,7 @@ def get_contents_from_url(url):
     #크롬 드라이버 초기화
     driver = set_chrome_driver()
     driver.get(url) # 웹사이트 접속
-    time.sleep(3)
+    time.sleep(2)
     driver.switch_to.frame('mainFrame')
 
     contents = ''
@@ -69,6 +69,9 @@ client_secret = "th6PYwzWnU" # 발급받은 secret 입력
 quote = input("검색어 입력: ") #검색어 입력받기
 display_num = input("검색 출력결과 갯수를 적어주세요.(최대100, 숫자만 입력): ") #출력할 갯수 입력받기
 sort_type = SearchSortType.SIM if input("검색 정렬방법을 선택해 주세요.(1. 정확도순, 2. 최신순): ") == "1" else SearchSortType.DATE
+temp = input("다양성 성향(tempertature)(0.0~2.0사이 defeault 1.0): ") or "1.0" 
+top_p = input("핵 샘플링 값(top_p)(0.0~1.0사이 defeault 1.0): ") or "1.0" 
+max_token = input("응답 토큰 수(default 1024): ") or "1024" 
 
 query_string = urlencode({"query": quote, 
                           "display": display_num,
@@ -104,21 +107,22 @@ system = """
      - 장소의 이름 
      - 장소의 컨셉
      - 장소의 주소
-     - 장소의 실내외 정보
+     - 장소의 실내외 여부
      - 운영시간
      - 장소의 공연정보
      - 휴무일 정보
-     - 장소의 연락처
-     - 간단한 장소 설명
-     - 평균 가격대
+     - 연락처
+     - 간략한 장소 설명
+     - 장소 이미지 링크
+     - 가격정보
      - 이용시간
      - 이용 대상 연령
      - 주차장 유무
      - 주차 난이도
      - 주변 주차장 정보
      - 장소 예약 난이도
-     - 유아 편의 시절정보
-     - 장소 할인정보
+     - 유아 편의 시절
+     - 할인정보
      - 해시태그
     형식에 맞는 정보를 블로그에서 찾을 수 없는 경우 인터넷에서 확인후 직접 입력한다.
     """  
@@ -134,8 +138,11 @@ for item in search_result['items']:
     print(blog_contents)
     print('-------------RESPONSE-----------------')
 
+    query_param = {"temp": temp, "top-p": top_p, "max-tokens": max_token, "n": 1}
+    query_string = urlencode(query_param)
+    url = "/open-ai/question?" + query_string
     request_body = json.dumps({"system": system, "user": user_message})
-    conn.request("POST", "/open-ai/question", request_body, {"Content-Type": "application/json"})
+    conn.request("POST", url, request_body, {"Content-Type": "application/json"})
     response = json.loads(conn.getresponse().read().decode("utf-8"))
     print(response["data"]["answerList"][0])
     print('--------------------------------------')
